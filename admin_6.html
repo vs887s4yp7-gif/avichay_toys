@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ניהול קטלוג | א. שלי צעצועים</title>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Assistant',sans-serif;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1e3c72;--blue2:#2a5298;--accent:#d97706;--accent2:#b45309;
+  --bg:#f1f5f9;--white:#fff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;
+  --green:#16a34a;--green-bg:#dcfce7;
+  --red:#dc2626;--red-bg:#fee2e2;
+  --yellow:#ca8a04;--orange:#ea580c;
+  --purple:#7c3aed;
+}
+body{background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+header{
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  color:#fff;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 12px rgba(0,0,0,.2)
+}
+header h1{font-size:1.1rem;font-weight:700}
+header p{font-size:.75rem;opacity:.8;margin-top:1px}
+.hbadge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 12px;font-size:.75rem;white-space:nowrap}
+
+/* TOOLBAR */
+.toolbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;align-items:center}
+.search-box{flex:1;min-width:0;position:relative}
+.search-box input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;outline:none;font-family:'Assistant',sans-serif}
+.search-box input:focus{border-color:var(--accent)}
+.filter-row{display:flex;gap:8px;width:100%}
+select.fsel{flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Assistant',sans-serif;background:#fff;outline:none}
+.btn-reload{padding:9px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* CATS */
+.cats{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat-btn{padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'Assistant',sans-serif;transition:all .15s}
+.cat-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* STATUS */
+.statusbar{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:.82rem;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}
+.dot.live{background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* CARDS GRID */
+.cards{padding:0 14px 24px;display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:520px){.cards{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.cards{grid-template-columns:1fr 1fr 1fr}}
+
+/* CARD */
+.card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+
+.card-top{display:flex;flex-direction:column;gap:0}
+.card-img{width:100%;height:180px;object-fit:contain;border-radius:10px 10px 0 0;border-bottom:1px solid var(--border);background:#f8fafc;display:block}
+.card-meta{padding:10px 14px 4px;min-width:0}
+.card-sku{font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:2px}
+.card-cat{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge-new{display:inline-block;background:var(--purple);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:4px}
+
+/* FIELDS */
+.card-fields{padding:10px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.field-label{font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:2px}
+.edit-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Assistant',sans-serif;outline:none;transition:border-color .2s;background:#fff}
+.edit-input:focus{border-color:var(--accent)}
+.edit-input.changed{border-color:var(--accent);background:#fffbf0}
+
+/* PRICE */
+.price-wrap{display:flex;align-items:center;gap:4px}
+.price-sym{font-size:14px;font-weight:700;color:var(--muted)}
+.price-input{flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;font-family:'Assistant',sans-serif;outline:none;transition:border-color .2s}
+.price-input:focus{border-color:var(--accent)}
+.price-input.changed{border-color:var(--accent);background:#fffbf0}
+
+/* STOCK SELECT */
+.stock-select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Assistant',sans-serif;background:#fff;outline:none;cursor:pointer}
+.stock-select.changed{border-color:var(--accent);background:#fffbf0}
+.stock-select[data-val="יש בשפע"]{border-color:var(--green);color:var(--green)}
+.stock-select[data-val="יש"]{border-color:var(--yellow);color:var(--yellow)}
+.stock-select[data-val="כמעט נגמר"]{border-color:var(--orange);color:var(--orange)}
+.stock-select[data-val="אין"]{border-color:var(--red);color:var(--red)}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+.toggle-label{font-size:.82rem;font-weight:600;color:var(--text)}
+.toggle{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:26px;cursor:pointer;transition:.3s}
+.slider:before{content:'';position:absolute;width:20px;height:20px;right:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:var(--purple)}
+input:checked+.slider:before{transform:translateX(-20px)}
+
+/* SAVE BTN */
+.btn-save{width:100%;padding:12px;background:#f1f5f9;color:var(--muted);border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Assistant',sans-serif;margin-top:4px}
+.btn-save.dirty{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-save.saving{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.btn-save.saved{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-save.err{background:var(--red);color:#fff}
+
+/* LOADING */
+#loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:1rem}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+#empty{display:none;text-align:center;padding:60px 20px;color:var(--muted)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:12px;font-size:.9rem;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🔧 ניהול קטלוג</h1>
+    <p>א. שלי צעצועים — עדכון מוצרים</p>
+  </div>
+  <div class="hbadge" id="sync-status">טוען...</div>
+</header>
+
+<div class="toolbar">
+  <div class="search-box">
+    <input type="search" id="search" placeholder="חיפוש לפי שם או מק״ט..." oninput="filterCards()">
+  </div>
+  <button class="btn-reload" onclick="loadData()">↺ רענן</button>
+</div>
+
+<div class="cats" id="categories"></div>
+
+<div class="statusbar">
+  <div class="dot" id="status-dot"></div>
+  <span id="status-text">מתחבר...</span>
+</div>
+
+<div id="loading"><div class="spinner"></div>טוען מוצרים...</div>
+<div id="empty">😕 לא נמצאו מוצרים</div>
+<div class="cards" id="cards"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyseDc329NWupfxK0xQ1sKh2dMdfITWykaKSi4BeDtyGZIfcnqhY4LU7BAm5Z-CDa1xSA/exec';
+const CLOUDINARY  = 'https://res.cloudinary.com/dpwibhqcl/image/upload/avichay_toys/';
+const STOCK_OPTS  = ['יש בשפע','יש','כמעט נגמר','אין'];
+
+let allProducts = [];
+let currentCat  = 'new';
+
+/* ── LOAD ── */
+function loadData() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('cards').innerHTML = '';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('status-dot').className = 'dot';
+  document.getElementById('status-text').textContent = 'מתחבר...';
+  document.getElementById('sync-status').textContent = 'טוען...';
+
+  const cb = 'cb' + Date.now();
+  const s  = document.createElement('script');
+  s.src    = SCRIPT_URL + '?action=read&callback=' + cb + '&_=' + Date.now();
+
+  window[cb] = function(data) {
+    document.head.removeChild(s);
+    delete window[cb];
+    if (!data.success) { showErr('שגיאה מהשרת'); return; }
+    allProducts = data.data || [];
+    buildCats();
+    filterCards();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('status-dot').className = 'dot live';
+    document.getElementById('status-text').textContent = allProducts.length + ' מוצרים נטענו';
+    document.getElementById('sync-status').textContent = '✓ ' + allProducts.length + ' מוצרים';
+  };
+
+  s.onerror = () => showErr('שגיאת רשת');
+  document.head.appendChild(s);
+}
+
+function showErr(msg) {
+  document.getElementById('loading').innerHTML = '<div style="color:#dc2626">⚠️ ' + msg + '</div>';
+  document.getElementById('status-text').textContent = 'שגיאה';
+  document.getElementById('sync-status').textContent = '✗ שגיאה';
+}
+
+/* ── CATS ── */
+function buildCats() {
+  const cats = [...new Set(allProducts.map(p => String(p['קטגוריה'] || '').trim()).filter(Boolean))];
+  const bar  = document.getElementById('categories');
+  const newCount = allProducts.filter(p => isNewProduct(p)).length;
+  const allCount = allProducts.length;
+  let html = '<button class="cat-btn active" onclick="setCat('new',this)">✨ חדש (' + newCount + ')</button>';
+  html += '<button class="cat-btn" onclick="setCat('all',this)">הכל (' + allCount + ')</button>';
+  cats.forEach(function(c) {
+    var n = allProducts.filter(function(p){ return String(p['קטגוריה'] || '').trim() === c; }).length;
+    var b = document.createElement('button');
+    b.className = 'cat-btn';
+    b.textContent = c + ' (' + n + ')';
+    b.onclick = function(){ setCat(c, this); };
+    bar.appendChild(b);
+  });
+  bar.innerHTML = html;
+}
+function setCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
+}
+
+/* ── FILTER ── */
+function filterCards() {
+  const q  = (document.getElementById('search').value || '').toLowerCase().trim();
+
+  const list = allProducts.filter(p => {
+    const sku  = String(getSKU(p)).toLowerCase();
+    const name = String(p['שם מוצר'] || '').toLowerCase();
+    const cat  = String(p['קטגוריה'] || '').trim();
+    const isNew= isNewProduct(p);
+
+    const matchCat = currentCat === 'all' || (currentCat === 'new' ? isNew : cat === currentCat);
+    return (!q || sku.includes(q) || name.includes(q)) && matchCat;
+  });
+
+  renderCards(list);
+  const total = list.length;
+  document.getElementById('status-text').textContent =
+    total === allProducts.length ? total + ' מוצרים' : total + ' מוצרים (מסוננים מתוך ' + allProducts.length + ')';
+}
+
+/* ── RENDER ── */
+function renderCards(products) {
+  const grid = document.getElementById('cards');
+  grid.innerHTML = '';
+
+  if (!products.length) {
+    document.getElementById('empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('empty').style.display = 'none';
+
+  products.forEach(p => {
+    const sku    = String(getSKU(p)).trim();
+    const name   = p['שם מוצר'] || '';
+    const desc   = p['תיאור מוצר'] || '';
+    const cat    = p['קטגוריה'] || '';
+    const price  = p['מחיר סיטונאי'] || '';
+    const stock  = p['מלאי'] || '';
+    const isNew  = isNewProduct(p);
+
+    const imgSrc = CLOUDINARY + sku + '.jpg';
+    const opts   = STOCK_OPTS.map(o => `<option${stock===o?' selected':''}>${o}</option>`).join('');
+
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.setAttribute('data-sku', sku);
+
+    div.innerHTML = `
+      <div class="card-top">
+        <img class="card-img" src="${imgSrc}" alt="${sku}"
+          onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'><rect width=\'100%25\' height=\'100%25\' fill=\'%23f1f5f9\'/><text x=\'50%25\' y=\'50%25\' font-size=\'10\' fill=\'%2394a3b8\' text-anchor=\'middle\' dy=\'.3em\'>${sku}</text></svg>'">
+        <div class="card-meta">
+          <div class="card-sku">${sku} ${isNew ? '<span class=\"badge-new\">✨ חדש</span>' : ''}</div>
+          <div class="card-cat">${escH(String(cat))}</div>
+        </div>
+      </div>
+
+      <div class="card-fields">
+        <div>
+          <div class="field-label">שם מוצר</div>
+          <input class="edit-input" data-field="שם מוצר" value="${escH(name)}"
+            oninput="markDirty(this,'${sku}')">
+        </div>
+
+        <div>
+          <div class="field-label">תיאור</div>
+          <input class="edit-input" data-field="תיאור מוצר" value="${escH(desc)}"
+            oninput="markDirty(this,'${sku}')">
+        </div>
+
+        <div>
+          <div class="field-label">מחיר סיטונאי</div>
+          <div class="price-wrap">
+            <span class="price-sym">₪</span>
+            <input class="price-input" type="number" data-field="מחיר סיטונאי"
+              value="${price}" oninput="markDirty(this,'${sku}')">
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label">מלאי</div>
+          <select class="stock-select" data-field="מלאי" data-val="${escH(stock)}"
+            onchange="markDirty(this,'${sku}');this.setAttribute('data-val',this.value)">
+            <option value="">-- בחר --</option>
+            ${opts}
+          </select>
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-label">מוצר חדש</span>
+          <label class="toggle">
+            <input type="checkbox" data-field="אינדיקטור חדש"
+              ${isNew ? 'checked' : ''}
+              onchange="markDirty(this,'${sku}')">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <button class="btn-save" id="save-${sku}" onclick="saveCard('${sku}')">שמור</button>
+      </div>
+    `;
+
+    grid.appendChild(div);
+  });
+}
+
+/* ── DIRTY ── */
+function markDirty(el, sku) {
+  el.classList.add('changed');
+  const btn = document.getElementById('save-' + sku);
+  if (btn) { btn.className = 'btn-save dirty'; btn.textContent = 'שמור ✏️'; }
+}
+
+/* ── SAVE ── */
+async function saveCard(sku) {
+  const btn  = document.getElementById('save-' + sku);
+  const card = document.querySelector('.card[data-sku="' + sku + '"]');
+  if (!card || !btn) return;
+
+  btn.disabled = true;
+  btn.className = 'btn-save saving';
+  btn.textContent = 'שומר...';
+
+  const updates = {};
+  card.querySelectorAll('[data-field]').forEach(el => {
+    const f = el.getAttribute('data-field');
+    updates[f] = el.type === 'checkbox' ? (el.checked ? 'כן' : '') : el.value;
+  });
+
+  try {
+    const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'update', sku, updates}) });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || json.error || 'שגיאה');
+
+    btn.className = 'btn-save saved';
+    btn.textContent = '✓ נשמר';
+    card.querySelectorAll('.changed').forEach(e => e.classList.remove('changed'));
+    const prod = allProducts.find(p => String(getSKU(p)).trim() === sku);
+    if (prod) Object.assign(prod, updates);
+    showToast('✓ ' + sku + ' עודכן', 'success');
+    setTimeout(() => { btn.disabled = false; btn.className = 'btn-save'; btn.textContent = 'שמור'; }, 2500);
+  } catch(err) {
+    btn.className = 'btn-save err';
+    btn.textContent = '✗ שגיאה';
+    btn.disabled = false;
+    showToast('שגיאה: ' + err.message, 'error');
+    setTimeout(() => { btn.className = 'btn-save dirty'; btn.textContent = 'שמור ✏️'; }, 3000);
+  }
+}
+
+/* ── HELPERS ── */
+function getSKU(p) { return p['מק"ט (קטלוגי)'] || p['מק""ט (קטלוגי)'] || p['מק"ט'] || ''; }
+function isNewProduct(p) {
+  const v = String(p['אינדיקטור חדש'] || '').toLowerCase();
+  return v === 'true' || v === '1' || v === 'כן';
+}
+function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type + ' show';
+  setTimeout(() => { t.className = 'toast ' + type; }, 3000);
+}
+
+document.getElementById('search').addEventListener('input', filterCards);
+loadData();
+</script>
+</body>
+</html>
