@@ -389,10 +389,12 @@
                 return v === 'כן' || v === '1' || v === 'true';
             }).length;
 
+            const allCount = products.length;
             let html = '<button class="category-btn active" onclick="selectCategory(\'_new\', this)">✨ חדש (' + newCount + ')</button>';
-            html += '<button class="category-btn" onclick="selectCategory(\'all\', this)">הכל</button>';
+            html += '<button class="category-btn" onclick="selectCategory(\'all\', this)">הכל (' + allCount + ')</button>';
             categoriesSet.forEach(function(cat) {
-                html += '<button class="category-btn" onclick="selectCategory(\'' + cat + '\', this)">' + cat + '</button>';
+                const catCount = products.filter(function(p){ return String(p['קטגוריה'] || '').trim() === cat; }).length;
+                html += '<button class="category-btn" onclick="selectCategory(\'' + cat + '\', this)">' + cat + ' (' + catCount + ')</button>';
             });
             categoriesDiv.innerHTML = html;
         }
