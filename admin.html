@@ -463,14 +463,14 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbKLho0kkn1XEB8fVEW1Lx03LIS7iCDm6zg_p53c5C0R8EcXCGsfketGp4YUOMXWnDug/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyseDc329NWupfxK0xQ1sKh2dMdfITWykaKSi4BeDtyGZIfcnqhY4LU7BAm5Z-CDa1xSA/exec';
 const CLOUDINARY_BASE = 'https://res.cloudinary.com/dpwibhqcl/image/upload/avichay_toys/';
 const STOCK_OPTIONS = ['יש בשפע', 'יש', 'כמעט נגמר', 'אין'];
 
 let allProducts = [];
 let currentCategory = 'all';
 
-async function loadData() {
+function loadData() {
     document.getElementById('loading').style.display = 'block';
     document.getElementById('table-wrapper').style.display = 'none';
     document.getElementById('empty').style.display = 'none';
@@ -478,9 +478,26 @@ async function loadData() {
     document.getElementById('status-text').textContent = 'מתחבר ל-Google Sheets...';
     document.getElementById('sync-status').textContent = 'טוען...';
 
+    // Use JSONP to bypass CORS
+    const callbackName = 'gsCallback_' + Date.now();
+    const script = document.createElement('script');
+    script.src = SCRIPT_URL + '?action=read&callback=' + callbackName;
+
+    window[callbackName] = function(json) {
+        document.head.removeChild(script);
+        delete window[callbackName];
+        handleData(json);
+    };
+
+    script.onerror = function() {
+        document.getElementById('loading').innerHTML = '<div style="color:#dc2626">שגיאה בחיבור ל-Google Sheets</div>';
+    };
+
+    document.head.appendChild(script);
+}
+
+function handleData(json) {
     try {
-        const res = await fetch(SCRIPT_URL + '?action=read');
-        const json = await res.json();
 
         if (!json.success) throw new Error(json.error || 'שגיאה בטעינה');
 
