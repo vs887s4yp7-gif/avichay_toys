@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחולל הוראות ליקוט</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; padding: 24px; direction: rtl; }
+  h1 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+  textarea { width: 100%; height: 200px; border: 1.5px solid #ddd; border-radius: 8px; padding: 12px; font-size: 0.9rem; direction: rtl; resize: vertical; font-family: inherit; }
+  textarea:focus { outline: none; border-color: #4f46e5; }
+  .row { display: flex; gap: 12px; margin-bottom: 12px; }
+  input[type="text"], input[type="number"] {
+    flex: 1; border: 1.5px solid #ddd; border-radius: 8px; padding: 10px 12px;
+    font-size: 0.9rem; direction: rtl; font-family: inherit;
+  }
+  input:focus { outline: none; border-color: #4f46e5; }
+  .btn { padding: 11px 24px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .btn-primary { background: #4f46e5; color: white; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-print { background: #059669; color: white; }
+  .btn-print:hover { background: #047857; }
+  .btn-clear { background: #f3f4f6; color: #555; }
+  .btn-clear:hover { background: #e5e7eb; }
+  .btn-add { background: #f59e0b; color: white; }
+  .btn-add:hover { background: #d97706; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .error { color: #dc2626; font-size: 0.85rem; margin-top: 8px; display: none; }
+  .hint { font-size: 0.78rem; color: #888; margin-top: 5px; }
+  .edit-hint { font-size: 0.75rem; color: #f59e0b; margin-top: 8px; }
+
+  /* Table */
+  #previewCard { display: none; }
+  #previewCard table { width: 100%; border-collapse: collapse; }
+  #previewCard th { background: #1a1a2e; color: white; padding: 9px 12px; text-align: right; font-size: 0.85rem; }
+  #previewCard td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 0.88rem; vertical-align: middle; }
+  #previewCard tr:nth-child(even) td { background: #f8f9ff; }
+  .preview-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+  .preview-header h3 { font-size: 1.1rem; color: #1a1a2e; }
+  .preview-header .meta { font-size: 0.8rem; color: #666; }
+  .badge { display: inline-block; background: #ede9fe; color: #4f46e5; border-radius: 6px; padding: 3px 9px; font-size: 0.78rem; font-weight: 600; }
+  .total-row td { font-weight: 700; border-top: 2px solid #ddd; background: #f0fdf4 !important; }
+
+  /* Product image in table */
+  .prod-img { width: 54px; height: 54px; object-fit: contain; border-radius: 6px; border: 1px solid #eee; background: #fafafa; display: block; }
+  .img-error { width: 54px; height: 54px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #ccc; border: 1px solid #eee; }
+
+  /* Editable cells */
+  td[contenteditable="true"] { background: #fffbf0 !important; cursor: text; outline: none; }
+  td[contenteditable="true"]:focus { background: #fef9c3 !important; box-shadow: inset 0 0 0 1.5px #f59e0b; }
+
+  /* Notes cell */
+  .notes-cell { min-width: 120px; }
+  td.notes-cell[contenteditable="true"] { color: #555; font-style: italic; }
+
+  .del-btn { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; opacity: 0.4; transition: opacity 0.15s; }
+  .del-btn:hover { opacity: 1; }
+
+  /* ─── PRINT ─── */
+  @media print {
+    body > .container { display: none; }
+    #printArea { display: block !important; direction: rtl; font-family: Arial, sans-serif; padding: 16px; }
+    .print-header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 16px; }
+    .print-header h2 { font-size: 1.3rem; }
+    .print-header .meta { font-size: 0.85rem; color: #333; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a1a2e !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 7px 10px; font-size: 0.82rem; text-align: right; }
+    td { padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 0.88rem; vertical-align: middle; }
+    tr:nth-child(even) td { background: #f9f9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .check-box { width: 16px; height: 16px; border: 2px solid #333; display: inline-block; }
+    .total-row td { font-weight: 700; border-top: 2px solid #000; background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .print-footer { margin-top: 20px; font-size: 0.78rem; color: #666; border-top: 1px solid #ccc; padding-top: 8px; }
+    .print-img { width: 48px; height: 48px; object-fit: contain; }
+    .no-img { width: 48px; height: 48px; display: inline-block; }
+    .notes-print { font-style: italic; color: #555; font-size: 0.8rem; }
+  }
+  #printArea { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📦 מחולל הוראות ליקוט</h1>
+
+  <div class="card">
+    <label>הדבק הודעת הזמנה מוואטסאפ</label>
+    <textarea id="msgInput" placeholder="הדבק כאן את טקסט ההזמנה..."></textarea>
+    <div class="error" id="errMsg">לא נמצאו פריטים בהודעה. בדוק שהפורמט כולל [Pxxxx].</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div style="flex:2">
+        <label>שם השולח (לקוח)</label>
+        <input type="text" id="customerName" placeholder="הכנס שם ידנית">
+        <div class="hint">* שם השולח לא מופיע בטקסט ההודעה — יש להזין ידנית</div>
+      </div>
+      <div style="flex:1">
+        <label>מספר הוראה</label>
+        <input type="number" id="orderNum" value="1" min="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="generate()">⚙️ צור הוראת ליקוט</button>
+    <button class="btn btn-add" onclick="addRow()" id="btnAdd" style="display:none">+ הוסף שורה</button>
+    <button class="btn btn-print" onclick="printOrder()" id="btnPrint" style="display:none">🖨️ הדפס</button>
+    <button class="btn btn-clear" onclick="clearAll()">🗑️ נקה</button>
+  </div>
+
+  <br>
+
+  <div class="card" id="previewCard">
+    <div class="preview-header">
+      <div>
+        <h3 id="previewTitle"></h3>
+        <div class="meta" id="previewMeta"></div>
+      </div>
+      <span class="badge" id="previewBadge"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th style="width:64px">תמונה</th>
+          <th style="width:82px">מקט</th>
+          <th>שם מוצר</th>
+          <th style="width:60px; text-align:center">כמות</th>
+          <th class="notes-cell">הערות</th>
+          <th style="width:58px; text-align:center">ליקט ✓</th>
+          <th style="width:32px"></th>
+        </tr>
+      </thead>
+      <tbody id="previewBody"></tbody>
+    </table>
+    <div class="edit-hint">✏️ ניתן לערוך מקט, שם מוצר, כמות והערות ישירות בטבלה</div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="printArea">
+  <div class="print-header">
+    <h2 id="pTitle"></h2>
+    <div class="meta" id="pMeta"></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32px">#</th>
+        <th style="width:58px">תמונה</th>
+        <th style="width:82px">מקט</th>
+        <th>שם מוצר</th>
+        <th style="width:55px; text-align:center">כמות</th>
+        <th>הערות</th>
+        <th style="width:55px; text-align:center">ליקט</th>
+      </tr>
+    </thead>
+    <tbody id="printBody"></tbody>
+  </table>
+  <div class="print-footer" id="pFooter"></div>
+</div>
+
+<script>
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/dpwibhqcl/image/upload/';
+let rowCounter = 0;
+
+function imgUrl(sku) {
+  return CLOUDINARY_BASE + sku + '.jpg';
+}
+
+function parseOrder(text) {
+  const itemRegex = /\[([A-Z0-9]+)\]\s*(.+?)(?:\n|\r\n?)[\s\S]*?כמות:\s*(\d+)/g;
+  const items = [];
+  let m;
+  while ((m = itemRegex.exec(text)) !== null) {
+    items.push({ sku: m[1], name: m[2].trim(), qty: parseInt(m[3]) });
+  }
+  return items;
+}
+
+function makeImgEl(sku, forPrint) {
+  if (forPrint) {
+    return `<img src="${imgUrl(sku)}" class="print-img" onerror="this.style.display='none'">`;
+  }
+  return `<img src="${imgUrl(sku)}" class="prod-img"
+    onerror="this.outerHTML='<div class=\\'img-error\\'>🚫</div>'">`;
+}
+
+function addEditableRow(item, idx) {
+  rowCounter++;
+  const id = rowCounter;
+  const pb = document.getElementById('previewBody');
+  const tr = document.createElement('tr');
+  tr.id = `row-${id}`;
+  tr.innerHTML = `
+    <td class="row-num">${idx + 1}</td>
+    <td class="img-cell">${makeImgEl(item.sku, false)}</td>
+    <td contenteditable="true" class="sku-cell" oninput="refreshImg(this)">${item.sku}</td>
+    <td contenteditable="true">${item.name}</td>
+    <td contenteditable="true" style="text-align:center">${item.qty}</td>
+    <td contenteditable="true" class="notes-cell" data-placeholder="הוסף הערה..."></td>
+    <td style="text-align:center"><input type="checkbox"></td>
+    <td><button class="del-btn" onclick="deleteRow('row-${id}')" title="מחק">✕</button></td>
+  `;
+  pb.appendChild(tr);
+}
+
+function refreshImg(skuCell) {
+  const tr = skuCell.closest('tr');
+  const imgCell = tr.querySelector('.img-cell');
+  const sku = skuCell.textContent.trim();
+  imgCell.innerHTML = makeImgEl(sku, false);
+}
+
+function addRow() {
+  const pb = document.getElementById('previewBody');
+  const rows = pb.querySelectorAll('tr:not(.total-row)');
+  addEditableRow({ sku: '', name: '', qty: '' }, rows.length);
+  renumberRows();
+}
+
+function deleteRow(id) {
+  const tr = document.getElementById(id);
+  if (tr) { tr.remove(); renumberRows(); }
+}
+
+function renumberRows() {
+  const pb = document.getElementById('previewBody');
+  pb.querySelectorAll('tr:not(.total-row)').forEach((tr, i) => {
+    const num = tr.querySelector('.row-num');
+    if (num) num.textContent = i + 1;
+  });
+}
+
+function getRowsData() {
+  const pb = document.getElementById('previewBody');
+  return Array.from(pb.querySelectorAll('tr:not(.total-row)')).map(tr => {
+    const cells = tr.querySelectorAll('td[contenteditable]');
+    return {
+      sku: cells[0]?.textContent.trim() || '',
+      name: cells[1]?.textContent.trim() || '',
+      qty: parseInt(cells[2]?.textContent.trim()) || 0,
+      notes: cells[3]?.textContent.trim() || ''
+    };
+  });
+}
+
+function generate() {
+  const text = document.getElementById('msgInput').value.trim();
+  const errEl = document.getElementById('errMsg');
+  if (!text) return;
+  const items = parseOrder(text);
+  errEl.style.display = 'none';
+  if (items.length === 0) { errEl.style.display = 'block'; return; }
+
+  const customer = document.getElementById('customerName').value.trim() || 'לא צוין';
+  const orderNum = document.getElementById('orderNum').value;
+  const now = new Date().toLocaleDateString('he-IL');
+
+  document.getElementById('previewTitle').textContent = `הוראת ליקוט #${orderNum} — ${customer}`;
+  document.getElementById('previewBadge').textContent = `${items.length} פריטים`;
+  document.getElementById('previewMeta').textContent =
+    `תאריך: ${now} | פריטים: ${items.length} | סה"כ יחידות: ${items.reduce((s,i)=>s+i.qty,0)}`;
+
+  const pb = document.getElementById('previewBody');
+  pb.innerHTML = '';
+  rowCounter = 0;
+  items.forEach((item, idx) => addEditableRow(item, idx));
+
+  document.getElementById('previewCard').style.display = 'block';
+  document.getElementById('btnPrint').style.display = 'inline-block';
+  document.getElementById('btnAdd').style.display = 'inline-block';
+  document.getElementById('orderNum').value = parseInt(orderNum) + 1;
+}
+
+function printOrder() {
+  const customer = document.getElementById('customerName').value.trim() || 'לא צוין';
+  const orderNum = parseInt(document.getElementById('orderNum').value) - 1;
+  const now = new Date().toLocaleDateString('he-IL');
+  const items = getRowsData();
+  const totalQty = items.reduce((s,i) => s + i.qty, 0);
+
+  document.getElementById('pTitle').textContent = `הוראת ליקוט #${orderNum} — ${customer}`;
+  document.getElementById('pMeta').textContent =
+    `תאריך: ${now} | פריטים: ${items.length} | סה"כ יחידות: ${totalQty}`;
+
+  const printB = document.getElementById('printBody');
+  printB.innerHTML = '';
+  items.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${makeImgEl(item.sku, true)}</td>
+      <td><strong>${item.sku}</strong></td>
+      <td>${item.name}</td>
+      <td style="text-align:center">${item.qty}</td>
+      <td class="notes-print">${item.notes}</td>
+      <td style="text-align:center"><span class="check-box"></span></td>
+    `;
+    printB.appendChild(tr);
+  });
+  const totalTr = document.createElement('tr');
+  totalTr.className = 'total-row';
+  totalTr.innerHTML = `<td colspan="4">סה"כ יחידות</td><td style="text-align:center">${totalQty}</td><td colspan="2"></td>`;
+  printB.appendChild(totalTr);
+  document.getElementById('pFooter').textContent = `הופק: ${now} | שלי צעצועים`;
+
+  window.print();
+}
+
+function clearAll() {
+  document.getElementById('msgInput').value = '';
+  document.getElementById('customerName').value = '';
+  document.getElementById('previewBody').innerHTML = '';
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('btnPrint').style.display = 'none';
+  document.getElementById('btnAdd').style.display = 'none';
+  document.getElementById('errMsg').style.display = 'none';
+}
+</script>
+</body>
+</html>
