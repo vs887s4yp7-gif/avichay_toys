@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>א. שלי צעצועים - קטלוג הזמנות</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet"></link>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #d97706;
+            --accent-hover: #b45309;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Assistant', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 20px 10px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(217, 93, 6, 0.1);
+        }
+
+        .categories-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            scrollbar-width: none;
+        }
+        
+        .categories-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .category-btn.active, .category-btn:hover {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.06);
+        }
+
+        .img-container {
+            width: 100%;
+            height: 220px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .product-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .product-sku {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .product-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .product-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .product-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #27ae60;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .btn-qty {
+            background: #ffffff;
+            border: none;
+            width: 55px;
+            height: 50px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--primary);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .btn-qty:active {
+            background: #e2e8f0;
+        }
+
+        .qty-input {
+            width: 60px;
+            height: 50px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            outline: none;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 500px;
+            z-index: 1000;
+        }
+
+        .btn-send {
+            width: 100%;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(39, 174, 96, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .btn-send svg {
+            width: 1.4em;
+            height: 1.4em;
+            flex-shrink: 0;
+        }
+
+        .btn-send:active {
+            transform: scale(0.98);
+            background-color: #219653;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px 8px 100px 8px; }
+            header { padding: 20px 15px; margin-bottom: 20px; }
+            header h1 { font-size: 1.6rem; }
+            .grid { grid-template-columns: 1fr; gap: 15px; }
+            .img-container { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>א. שלי צעצועים</h1>
+            <p>קטלוג הזמנות דיגיטלי לבחירת מוצרים</p>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="search" class="search-input" placeholder="חפש מוצר לפי שם או מק״ט...">
+        </div>
+
+        <div id="categories" class="categories-container"></div>
+
+        <div id="loading" class="loading">טוען קטלוג מוצרים...</div>
+        <div id="catalog-grid" class="grid" style="display: none;"></div>
+    </div>
+
+    <div class="floating-action">
+        <button class="btn-send" onclick="sendOrder()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path fill="white" d="M20.52 3.48A11.88 11.88 0 0012 0C5.37 0 0 5.37 0 12c0 2.12.55 4.16 1.6 5.97L0 24l6.33-1.64A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.2-3.48-8.52z"/>
+                <path fill="white" d="M17.472 14.37c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.149-.672.149-.198.297-.767.967-.94 1.165-.173.198-.348.223-.645.074-.297-.149-1.255-.462-2.39-1.475-.884-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.127.297-.33.446-.495.149-.165.198-.297.298-.495.099-.198.05-.372-.025-.521-.075-.149-.67-1.612-.92-2.213-.242-.579-.487-.5-.672-.51-.173-.01-.372-.01-.57-.01s-.52.074-.792.372c-.273.297-1.04 1.016-1.04 2.478 0 1.462 1.064 2.875 1.213 3.074.148.198 2.095 3.2 5.077 4.487 1.13.487 2.012.685 2.703.697.89.02 1.674-.34 2.31-.695.706-.389 1.23-.96 1.406-1.68.176-.72.176-1.338.124-1.465-.05-.127-.198-.198-.445-.347z"/>
+            </svg>
+            <span>שלח הזמנה לאביחי (0 ש״ח)</span>
+        </button>
+    </div>
+
+    <script>
+        let productsData = [];
+        let currentCategory = '_new';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchCatalog();
+            document.getElementById('search').addEventListener('input', filterProducts);
+        });
+
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyseDc329NWupfxK0xQ1sKh2dMdfITWykaKSi4BeDtyGZIfcnqhY4LU7BAm5Z-CDa1xSA/exec';
+        const CLOUDINARY = 'https://res.cloudinary.com/dpwibhqcl/image/upload/';
+
+        function fetchCatalog() {
+            const cb = 'cb' + Date.now();
+            const s = document.createElement('script');
+            s.src = SCRIPT_URL + '?action=read&callback=' + cb + '&_=' + Date.now();
+
+            const timer = setTimeout(function() {
+                if (window[cb]) {
+                    delete window[cb];
+                    try { document.head.removeChild(s); } catch(e){}
+                    document.getElementById('loading').textContent = 'שגיאת חיבור — נסה לרענן';
+                }
+            }, 15000);
+
+            window[cb] = function(data) {
+                clearTimeout(timer);
+                try { document.head.removeChild(s); } catch(e){}
+                delete window[cb];
+                if (!data || !data.success) {
+                    document.getElementById('loading').textContent = 'שגיאה בטעינת הקטלוג';
+                    return;
+                }
+                productsData = data.data || [];
+                buildCategoryMenu(productsData);
+                displayProducts(productsData);
+                filterProducts();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('catalog-grid').style.display = 'grid';
+            };
+
+            s.onerror = function() {
+                clearTimeout(timer);
+                delete window[cb];
+                document.getElementById('loading').textContent = 'שגיאת רשת — נסה לרענן';
+            };
+            document.head.appendChild(s);
+        }
+
+        function buildCategoryMenu(products) {
+            const categoriesDiv = document.getElementById('categories');
+            const categoriesSet = new Set();
+            
+            products.forEach(row => {
+                const category = row['קטגוריה'] || row['"קטגוריה"'] || '';
+                if (category && String(category).trim() !== '') {
+                    categoriesSet.add(String(category).trim());
+                }
+            });
+
+            if (categoriesSet.size === 0) return;
+
+            const newCount = products.filter(p => {
+                const v = String(p['אינדיקטור חדש'] || '').toLowerCase();
+                return v === 'כן' || v === '1' || v === 'true';
+            }).length;
+
+            let html = '<button class="category-btn active" onclick="selectCategory(\'_new\', this)">✨ חדש (' + newCount + ')</button>';
+            html += '<button class="category-btn" onclick="selectCategory(\'all\', this)">הכל</button>';
+            categoriesSet.forEach(function(cat) {
+                html += '<button class="category-btn" onclick="selectCategory(\'' + cat + '\', this)">' + cat + '</button>';
+            });
+            categoriesDiv.innerHTML = html;
+        }
+
+        function selectCategory(category, btn) {
+            currentCategory = category;
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterProducts();
+        }
+
+        function displayProducts(products) {
+            const grid = document.getElementById('catalog-grid');
+            grid.innerHTML = '';
+
+            products.forEach(row => {
+                const sku = row['מק""ט (קטלוגי)'] || row['מק"ט (קטלוגי)'] || row['מק"ט'] || '';
+                const name = row['שם מוצר'] || row['"שם מוצר"'] || row['תיאור פריט'] || '';
+                const desc = row['תיאור מוצר'] || row['"תיאור מוצר"'] || '';
+                const cat = row['קטגוריה'] || row['"קטגוריה"'] || 'כללי';
+                
+                if (!sku && !name) return; 
+
+                let rawPrice = row['מחיר אחרי תיקון'] || row['"מחיר אחרי תיקון"'] || row['מחיר סיטונאי'] || row['"מחיר סיטונאי"'] || row['מחיר'] || 0;
+                let price = parseFloat(rawPrice) || 0;
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.setAttribute('data-sku', String(sku));
+                card.setAttribute('data-name', String(name));
+                card.setAttribute('data-price', price);
+                card.setAttribute('data-category', String(cat).trim());
+                const isNewProduct = (function() {
+                    const v = String(row['אינדיקטור חדש'] || '').toLowerCase();
+                    return v === 'כן' || v === '1' || v === 'true';
+                })();
+                card.setAttribute('data-new', isNewProduct ? 'true' : 'false');
+                if (isNewProduct) {
+                    card.style.position = 'relative';
+                }
+
+                const cleanSku = String(sku).trim().toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
+                const imgSrc = cleanSku ? (CLOUDINARY + cleanSku + '.jpg') : '';
+
+                card.innerHTML = `
+                    <div class="img-container">
+                        <img src="${imgSrc}" alt="${name}" onerror="this.style.display='none'">
+                    </div>
+                    <div class="product-info">
+                        <span class="product-sku">מק״ט: ${sku}</span>
+                        <h3 class="product-name">${name}</h3>
+                        <p class="product-desc">${desc}</p>
+                        <div class="product-price">₪${price.toFixed(2)}</div>
+                        <div class="qty-controls">
+                            <button class="btn-qty" onclick="changeQty(this, -1)">-</button>
+                            <input type="number" class="qty-input" value="0" min="0" oninput="updateCartTotals()">
+                            <button class="btn-qty" onclick="changeQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function changeQty(btn, change) {
+            const container = btn.parentElement;
+            const input = container.querySelector('.qty-input');
+            let currentVal = parseInt(input.value) || 0;
+            let newVal = currentVal + change;
+            if (newVal < 0) newVal = 0;
+            input.value = newVal;
+            updateCartTotals();
+        }
+
+        function updateCartTotals() {
+            const cards = document.querySelectorAll('.product-card');
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            cards.forEach(card => {
+                const qty = parseInt(card.querySelector('.qty-input').value) || 0;
+                const price = parseFloat(card.getAttribute('data-price')) || 0;
+                
+                if (qty > 0) {
+                    totalItems += qty;
+                    totalPrice += (qty * price);
+                }
+            });
+
+            const sendBtnSpan = document.querySelector('.btn-send span');
+            if (totalItems > 0) {
+                sendBtnSpan.innerHTML = `שלח הזמנה לאביחי (${totalItems} פריטים) • סה״כ: ₪${totalPrice.toLocaleString('he-IL', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            } else {
+                sendBtnSpan.textContent = `שלח הזמנה לאביחי (0 ש״ח)`;
+            }
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('search').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.product-card');
+
+            cards.forEach(card => {
+                const skuAttr = card.getAttribute('data-sku');
+                const nameAttr = card.getAttribute('data-name');
+                const cardCat = card.getAttribute('data-category');
+                
+                const sku = skuAttr ? skuAttr.toLowerCase() : '';
+                const name = nameAttr ? nameAttr.toLowerCase() : '';
+                
+                const matchesSearch = sku.includes(query) || name.includes(query);
+                const isNew = card.getAttribute('data-new') === 'true';
+                const matchesCategory = (currentCategory === 'all' || (currentCategory === '_new' ? isNew : cardCat === currentCategory));
+                
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function sendOrder() {
+            const cards = document.querySelectorAll('.product-card');
+            let orderItems = [];
+            let grandTotal = 0;
+            
+            cards.forEach(card => {
+                const sku = card.getAttribute('data-sku');
+                const name = card.getAttribute('data-name');
+                const price = parseFloat(card.getAttribute('data-price')) || 0;
+                const qty = parseInt(card.querySelector('.qty-input').value) || 0;
+                
+                if (qty > 0) {
+                    const itemTotal = qty * price;
+                    grandTotal += itemTotal;
+                    orderItems.push(`• *[${sku}]* ${name}\n  כמות: ${qty} | מחיר: ₪${price} | סה"כ: ₪${itemTotal}`);
+                }
+            });
+            
+            if (orderItems.length === 0) {
+                alert('אנא בחרו לפחות פריט אחד לפני שליחת ההזמנה.');
+                return;
+            }
+            
+            let message = `שלום אביחי, אשמח לבצע הזמנה עבור הפריטים הבאים:\n\n`;
+            message += orderItems.join('\n\n');
+            message += `\n\n─────────────────\n*💵 סך הכל לתשלום: ₪${grandTotal.toLocaleString('he-IL')}*`;
+            message += `\n\nתודה!`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const phoneNumber = '972548354668';
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
