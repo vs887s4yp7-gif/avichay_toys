@@ -268,6 +268,7 @@ function renderCards(products) {
     const cat    = p['קטגוריה'] || '';
     const price  = p['מחיר סיטונאי'] || '';
     const stock  = p['מלאי'] || '';
+    const boxQty = p['כמות במארז'] || '';
     const isNew  = isNewProduct(p);
 
     const cleanSku = sku.toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
@@ -308,6 +309,12 @@ function renderCards(products) {
             <input class="price-input" type="number" data-field="מחיר סיטונאי"
               value="${price}" oninput="markDirty(this,'${sku}')">
           </div>
+        </div>
+
+        <div>
+          <div class="field-label">📦 כמות במארז</div>
+          <input class="edit-input" type="number" min="1" data-field="כמות במארז"
+            value="${boxQty}" oninput="markDirty(this,'${sku}')">
         </div>
 
         <div>
