@@ -173,7 +173,8 @@ function imgUrl(sku) {
 }
 
 function parseOrder(text) {
-  const itemRegex = /\[([A-Z0-9]+)\]\s*(.+?)(?:\n|\r\n?)[\s\S]*?כמות:\s*(\d+)/g;
+  const itemRegex = /\[([A-Za-z0-9]+)\]\s*(.+?)(?:\n|\r\n?)[\s\S]*?כמות:\s*(\d+)/g;
+
   const items = [];
   let m;
   while ((m = itemRegex.exec(text)) !== null) {
