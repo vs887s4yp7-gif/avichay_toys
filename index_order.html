@@ -292,7 +292,14 @@
             .grid { grid-template-columns: 1fr; gap: 15px; }
             .img-container { height: 200px; }
         }
-    </style>
+    
+        .box-info {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 4px;
+        }
+</style>
 </head>
 <body>
 
@@ -412,6 +419,7 @@
 
             products.forEach(row => {
                 const sku = row['מק""ט (קטלוגי)'] || row['מק"ט (קטלוגי)'] || row['מק"ט'] || '';
+                const boxQty = parseInt(row['כמות במארז'] || row['"כמות במארז"'] || 1) || 1;
                 const name = row['שם מוצר'] || row['"שם מוצר"'] || row['תיאור פריט'] || '';
                 const desc = row['תיאור מוצר'] || row['"תיאור מוצר"'] || '';
                 const cat = row['קטגוריה'] || row['"קטגוריה"'] || 'כללי';
@@ -427,6 +435,7 @@
                 card.setAttribute('data-name', String(name));
                 card.setAttribute('data-price', price);
                 card.setAttribute('data-category', String(cat).trim());
+                card.setAttribute('data-box', boxQty);
                 const isNewProduct = (function() {
                     const v = String(row['אינדיקטור חדש'] || '').toLowerCase();
                     return v === 'כן' || v === '1' || v === 'true';
@@ -449,23 +458,33 @@
                         <p class="product-desc">${desc}</p>
                         <div class="product-price">₪${price.toFixed(2)}</div>
                         <div class="qty-controls">
-                            <button class="btn-qty" onclick="changeQty(this, -1)">-</button>
-                            <input type="number" class="qty-input" value="0" min="0" oninput="updateCartTotals()">
+                            <button class="btn-qty" onclick="changeQty(this, -1)">−</button>
+                            <input type="number" class="qty-input" value="0" min="0" readonly style="text-align:center">
                             <button class="btn-qty" onclick="changeQty(this, 1)">+</button>
                         </div>
+                        <div class="box-info">📦 ${boxQty} יח' במארז</div>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        function changeQty(btn, change) {
+        function changeQty(btn, direction) {
             const container = btn.parentElement;
             const input = container.querySelector('.qty-input');
+            const card = btn.closest('.product-card');
+            const boxQty = parseInt(card.getAttribute('data-box')) || 1;
             let currentVal = parseInt(input.value) || 0;
-            let newVal = currentVal + change;
-            if (newVal < 0) newVal = 0;
-            input.value = newVal;
+
+            if (direction === 1) {
+                // פלוס - קפוץ למארז הבא
+                input.value = currentVal + boxQty;
+            } else {
+                // מינוס - חזור למארז הקודם
+                let newVal = currentVal - boxQty;
+                if (newVal < 0) newVal = 0;
+                input.value = newVal;
+            }
             updateCartTotals();
         }
 
