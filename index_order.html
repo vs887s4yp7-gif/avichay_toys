@@ -514,18 +514,33 @@
                         <h3 class="product-name">${name}</h3>
                         <p class="product-desc">${desc}</p>
                         <div class="product-price">₪${price.toFixed(2)}</div>
-                        ${stockVal === 'אין' ? '<div class="out-of-stock-btn">✗ לא זמין להזמנה</div>' :
-                          stockVal === 'כמעט נגמר' ? '<div class="last-items-btn blink">⚡ פריטים אחרונים! לחץ להזמין</div><div class="qty-controls"><button class="btn-qty" onclick="changeQty(this, -1)">−</button><input type="number" class="qty-input" value="0" min="0" readonly style="text-align:center"><button class="btn-qty" onclick="changeQty(this, 1)">+</button></div><div class="box-info">📦 ${boxQty} יח\' במארז</div>' :
-                          '<div class="qty-controls"><button class="btn-qty" onclick="changeQty(this, -1)">−</button><input type="number" class="qty-input" value="0" min="0" readonly style="text-align:center"><button class="btn-qty" onclick="changeQty(this, 1)">+</button></div><div class="box-info">📦 ${boxQty} יח\' במארז</div>'}
+                        ${buildOrderControls(stockVal, boxQty)}
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
+        function buildOrderControls(stockVal, boxQty) {
+            if (stockVal === 'אין') {
+                return '<div class="out-of-stock-btn">✗ לא זמין להזמנה</div>';
+            }
+            var qtyHtml = '<div class="qty-controls">' +
+                '<button class="btn-qty" onclick="changeQty(this, -1)">−</button>' +
+                '<input type="number" class="qty-input" value="0" min="0" readonly style="text-align:center">' +
+                '<button class="btn-qty" onclick="changeQty(this, 1)">+</button>' +
+                '</div><div class="box-info">📦 ' + boxQty + ' יח\' במארז</div>';
+
+            if (stockVal === 'כמעט נגמר') {
+                return '<div class="last-items-btn blink">⚡ פריטים אחרונים! לחץ להזמין</div>' + qtyHtml;
+            }
+            return qtyHtml;
+        }
+
         function changeQty(btn, direction) {
             const container = btn.parentElement;
             const input = container.querySelector('.qty-input');
+            if (!input) return;
             const card = btn.closest('.product-card');
             const boxQty = parseInt(card.getAttribute('data-box')) || 1;
             let currentVal = parseInt(input.value) || 0;
@@ -548,7 +563,9 @@
             let totalPrice = 0;
 
             cards.forEach(card => {
-                const qty = parseInt(card.querySelector('.qty-input').value) || 0;
+                const qtyInput = card.querySelector('.qty-input');
+                if (!qtyInput) return;
+                const qty = parseInt(qtyInput.value) || 0;
                 const price = parseFloat(card.getAttribute('data-price')) || 0;
                 
                 if (qty > 0) {
