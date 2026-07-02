@@ -644,8 +644,9 @@
                 'event_label': 'whatsapp_send',
                 'value': grandTotal
                 });
-            window.open(whatsappUrl, '_blank');
-        }
+            setTimeout(function() {
+                window.open(whatsappUrl, '_blank');
+            }, 300);        }
     </script>
 </body>
 </html>
