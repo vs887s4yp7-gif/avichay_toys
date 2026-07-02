@@ -639,7 +639,11 @@
             const encodedMessage = encodeURIComponent(message);
             const phoneNumber = '972548354668';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-            
+            gtag('event', 'send_order', {
+                'event_category': 'orders',
+                'event_label': 'whatsapp_send',
+                'value': grandTotal
+                });
             window.open(whatsappUrl, '_blank');
         }
     </script>
