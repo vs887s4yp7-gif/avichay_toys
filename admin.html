@@ -82,6 +82,10 @@ select.fsel{flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radi
 .sel-input:focus{border-color:var(--accent)}
 .sel-input.changed{border-color:var(--accent);background:#fffbf0}
 
+/* NEW-VALUE TEXT INPUT (shown under a select when "➕ ...חדשה" is chosen) */
+.new-val-input{display:none;width:100%;margin-top:6px;padding:9px 12px;border:1.5px dashed var(--accent);border-radius:9px;font-size:14px;font-family:'Assistant',sans-serif;outline:none;background:#fffbf0}
+.new-val-input.show{display:block}
+
 /* PRICE */
 .price-wrap{display:flex;align-items:center;gap:4px}
 .price-sym{font-size:14px;font-weight:700;color:var(--muted)}
@@ -268,7 +272,7 @@ function filterCards() {
 }
 
 /* ── build a <select> for קטגוריה / תת קטגוריה, with current value included even if not in the base list ── */
-function buildDropdown(field, currentVal, optList) {
+function buildDropdown(field, currentVal, optList, allowNew) {
   const cur = String(currentVal || '').trim();
   const opts = [...optList];
   if (cur && !opts.includes(cur)) opts.push(cur);
@@ -276,7 +280,24 @@ function buildDropdown(field, currentVal, optList) {
   opts.forEach(o => {
     html += `<option value="${escH(o)}"${o === cur ? ' selected' : ''}>${escH(o)}</option>`;
   });
+  if (allowNew === 'cat') html += '<option value="__new__">➕ קטגוריה חדשה...</option>';
+  if (allowNew === 'subcat') html += '<option value="__new__">➕ תת קטגוריה חדשה...</option>';
   return html;
+}
+
+/* ── handle switching a category/תת קטגוריה select to "add new" mode ── */
+function onCatSelectChange(sel, sku) {
+  const wrap    = sel.closest('div');
+  const newInp  = wrap.querySelector('.new-val-input');
+  if (sel.value === '__new__') {
+    newInp.classList.add('show');
+    newInp.value = '';
+    newInp.focus();
+  } else {
+    newInp.classList.remove('show');
+    newInp.value = '';
+  }
+  markDirty(sel, sku);
 }
 
 /* ── RENDER ── */
@@ -305,8 +326,8 @@ function renderCards(products) {
     const cleanSku = sku.toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
     const imgSrc = CLOUDINARY + cleanSku + '.jpg';
     const opts   = STOCK_OPTS.map(o => `<option${stock===o?' selected':''}>${o}</option>`).join('');
-    const catOpts    = buildDropdown('קטגוריה', cat, allCats);
-    const subcatOpts = buildDropdown('תת קטגוריה', subcat, allSubcats);
+    const catOpts    = buildDropdown('קטגוריה', cat, allCats, 'cat');
+    const subcatOpts = buildDropdown('תת קטגוריה', subcat, allSubcats, 'subcat');
 
     const div = document.createElement('div');
     div.className = 'card';
@@ -339,16 +360,20 @@ function renderCards(products) {
           <div>
             <div class="field-label">קטגוריה</div>
             <select class="sel-input" data-field="קטגוריה"
-              onchange="markDirty(this,'${sku}')">
+              onchange="onCatSelectChange(this,'${sku}')">
               ${catOpts}
             </select>
+            <input type="text" class="new-val-input" placeholder="שם קטגוריה חדשה..."
+              oninput="markDirty(this,'${sku}')">
           </div>
           <div>
             <div class="field-label">תת קטגוריה</div>
             <select class="sel-input" data-field="תת קטגוריה"
-              onchange="markDirty(this,'${sku}')">
+              onchange="onCatSelectChange(this,'${sku}')">
               ${subcatOpts}
             </select>
+            <input type="text" class="new-val-input" placeholder="שם תת קטגוריה חדשה..."
+              oninput="markDirty(this,'${sku}')">
           </div>
         </div>
 
@@ -424,7 +449,13 @@ async function saveCard(sku) {
   const updates = {};
   card.querySelectorAll('[data-field]').forEach(el => {
     const f = el.getAttribute('data-field');
-    updates[f] = el.type === 'checkbox' ? (el.checked ? 'כן' : '') : el.value;
+    let val = el.type === 'checkbox' ? (el.checked ? 'כן' : '') : el.value;
+    // אם זו קטגוריה/תת-קטגוריה שסומנה כ"חדשה" — לקחת את הטקסט מהשדה החופשי לצידה
+    if ((f === 'קטגוריה' || f === 'תת קטגוריה') && val === '__new__') {
+      const newInp = el.closest('div').querySelector('.new-val-input');
+      val = newInp ? newInp.value.trim() : '';
+    }
+    updates[f] = val;
   });
 
   try {
