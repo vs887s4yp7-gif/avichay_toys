@@ -74,10 +74,18 @@ select.fsel{flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radi
 .edit-input:focus{border-color:var(--accent)}
 .edit-input.changed{border-color:var(--accent);background:#fffbf0}
 
+/* TWO COL ROW */
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* SELECT (generic, used for category/subcategory) */
+.sel-input{width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Assistant',sans-serif;background:#fff;outline:none;cursor:pointer;transition:border-color .2s}
+.sel-input:focus{border-color:var(--accent)}
+.sel-input.changed{border-color:var(--accent);background:#fffbf0}
+
 /* PRICE */
 .price-wrap{display:flex;align-items:center;gap:4px}
 .price-sym{font-size:14px;font-weight:700;color:var(--muted)}
-.price-input{flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;font-family:'Assistant',sans-serif;outline:none;transition:border-color .2s}
+.price-input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:15px;font-family:'Assistant',sans-serif;outline:none;transition:border-color .2s}
 .price-input:focus{border-color:var(--accent)}
 .price-input.changed{border-color:var(--accent);background:#fffbf0}
 
@@ -158,6 +166,8 @@ const STOCK_OPTS  = ['יש בשפע','יש','כמעט נגמר','אין'];
 
 let allProducts = [];
 let currentCat  = '_new';
+let allCats     = [];   // unique קטגוריה values, for the edit dropdowns
+let allSubcats  = [];   // unique תת קטגוריה values, for the edit dropdowns
 
 /* ── LOAD ── */
 function loadData() {
@@ -188,6 +198,7 @@ function loadData() {
     if (!data || !data.success) { showErr('שגיאה מהשרת: ' + JSON.stringify(data)); return; }
     allProducts = data.data || [];
     buildCats();
+    buildFieldOptions();
     filterCards();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('status-dot').className = 'dot live';
@@ -207,6 +218,12 @@ function showErr(msg) {
   document.getElementById('loading').innerHTML = '<div style="color:#dc2626;padding:20px;font-size:14px;line-height:1.8">⚠️ ' + msg + '<br><br><small style="color:#64748b">URL: ' + SCRIPT_URL.slice(0,60) + '...<br>נסה לפתוח את ה-URL ישירות בדפדפן ולבדוק שמחזיר JSON</small><br><br><button onclick="loadData()" style="margin-top:8px;padding:8px 16px;background:#d97706;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">↺ נסה שוב</button></div>';
   document.getElementById('status-text').textContent = 'שגיאה';
   document.getElementById('sync-status').textContent = '✗ שגיאה';
+}
+
+/* ── FIELD OPTIONS (קטגוריה / תת קטגוריה dropdown source lists) ── */
+function buildFieldOptions() {
+  allCats    = [...new Set(allProducts.map(p => String(p['קטגוריה'] || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he'));
+  allSubcats = [...new Set(allProducts.map(p => String(p['תת קטגוריה'] || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he'));
 }
 
 /* ── CATS ── */
@@ -250,6 +267,18 @@ function filterCards() {
     total === allProducts.length ? total + ' מוצרים' : total + ' מוצרים (מסוננים מתוך ' + allProducts.length + ')';
 }
 
+/* ── build a <select> for קטגוריה / תת קטגוריה, with current value included even if not in the base list ── */
+function buildDropdown(field, currentVal, optList) {
+  const cur = String(currentVal || '').trim();
+  const opts = [...optList];
+  if (cur && !opts.includes(cur)) opts.push(cur);
+  let html = '<option value="">-- בחר --</option>';
+  opts.forEach(o => {
+    html += `<option value="${escH(o)}"${o === cur ? ' selected' : ''}>${escH(o)}</option>`;
+  });
+  return html;
+}
+
 /* ── RENDER ── */
 function renderCards(products) {
   const grid = document.getElementById('cards');
@@ -262,17 +291,22 @@ function renderCards(products) {
   document.getElementById('empty').style.display = 'none';
 
   products.forEach(p => {
-    const sku    = String(getSKU(p)).trim();
-    const name   = p['שם מוצר'] || '';
-    const desc   = p['תיאור מוצר'] || '';
-    const cat    = p['קטגוריה'] || '';
-    const price  = p['מחיר סיטונאי'] || '';
-    const stock  = p['מלאי'] || '';
-    const isNew  = isNewProduct(p);
+    const sku      = String(getSKU(p)).trim();
+    const name     = p['שם מוצר'] || '';
+    const desc     = p['תיאור מוצר'] || '';
+    const cat      = p['קטגוריה'] || '';
+    const subcat   = p['תת קטגוריה'] || '';
+    const price    = p['מחיר סיטונאי'] || '';
+    const storePr  = p['מחיר חנות'] || '';
+    const stock    = p['מלאי'] || '';
+    const boxQty   = p['כמות במארז'] || '';
+    const isNew    = isNewProduct(p);
 
     const cleanSku = sku.toLowerCase().replace(/\.(jpg|jpeg|png|webp)$/i, '');
     const imgSrc = CLOUDINARY + cleanSku + '.jpg';
     const opts   = STOCK_OPTS.map(o => `<option${stock===o?' selected':''}>${o}</option>`).join('');
+    const catOpts    = buildDropdown('קטגוריה', cat, allCats);
+    const subcatOpts = buildDropdown('תת קטגוריה', subcat, allSubcats);
 
     const div = document.createElement('div');
     div.className = 'card';
@@ -284,7 +318,7 @@ function renderCards(products) {
           onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'><rect width=\'100%25\' height=\'100%25\' fill=\'%23f1f5f9\'/><text x=\'50%25\' y=\'50%25\' font-size=\'10\' fill=\'%2394a3b8\' text-anchor=\'middle\' dy=\'.3em\'>${sku}</text></svg>'">
         <div class="card-meta">
           <div class="card-sku">${sku} ${isNew ? '<span class=\"badge-new\">✨ חדש</span>' : ''}</div>
-          <div class="card-cat">${escH(String(cat))}</div>
+          <div class="card-cat">${escH(String(cat))}${subcat ? ' / ' + escH(String(subcat)) : ''}</div>
         </div>
       </div>
 
@@ -301,13 +335,46 @@ function renderCards(products) {
             oninput="markDirty(this,'${sku}')">
         </div>
 
-        <div>
-          <div class="field-label">מחיר סיטונאי</div>
-          <div class="price-wrap">
-            <span class="price-sym">₪</span>
-            <input class="price-input" type="number" data-field="מחיר סיטונאי"
-              value="${price}" oninput="markDirty(this,'${sku}')">
+        <div class="field-row2">
+          <div>
+            <div class="field-label">קטגוריה</div>
+            <select class="sel-input" data-field="קטגוריה"
+              onchange="markDirty(this,'${sku}')">
+              ${catOpts}
+            </select>
           </div>
+          <div>
+            <div class="field-label">תת קטגוריה</div>
+            <select class="sel-input" data-field="תת קטגוריה"
+              onchange="markDirty(this,'${sku}')">
+              ${subcatOpts}
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row2">
+          <div>
+            <div class="field-label">מחיר סיטונאי</div>
+            <div class="price-wrap">
+              <span class="price-sym">₪</span>
+              <input class="price-input" type="number" data-field="מחיר סיטונאי"
+                value="${price}" oninput="markDirty(this,'${sku}')">
+            </div>
+          </div>
+          <div>
+            <div class="field-label">מחיר חנות</div>
+            <div class="price-wrap">
+              <span class="price-sym">₪</span>
+              <input class="price-input" type="number" data-field="מחיר חנות"
+                value="${storePr}" oninput="markDirty(this,'${sku}')">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label">📦 כמות במארז</div>
+          <input class="edit-input" type="number" min="1" data-field="כמות במארז"
+            value="${boxQty}" oninput="markDirty(this,'${sku}')">
         </div>
 
         <div>
@@ -370,6 +437,9 @@ async function saveCard(sku) {
     card.querySelectorAll('.changed').forEach(e => e.classList.remove('changed'));
     const prod = allProducts.find(p => String(getSKU(p)).trim() === sku);
     if (prod) Object.assign(prod, updates);
+    // אם נוספה קטגוריה/תת-קטגוריה חדשה — לעדכן את רשימות הבחירה לפעם הבאה
+    buildFieldOptions();
+    buildCats();
     showToast('✓ ' + sku + ' עודכן', 'success');
     setTimeout(() => { btn.disabled = false; btn.className = 'btn-save'; btn.textContent = 'שמור'; }, 2500);
   } catch(err) {
