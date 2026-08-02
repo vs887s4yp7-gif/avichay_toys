@@ -100,6 +100,7 @@ header p{font-size:.75rem;opacity:.8;margin-top:1px}
 /* STOCK SELECT */
 .stock-select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Assistant',sans-serif;background:#fff;outline:none;cursor:pointer}
 .stock-select.changed{border-color:var(--accent);background:#fffbf0}
+.stock-select[data-val="בקרוב"]{border-color:var(--purple);color:var(--purple)}
 .stock-select[data-val="יש בשפע"]{border-color:var(--green);color:var(--green)}
 .stock-select[data-val="יש"]{border-color:var(--yellow);color:var(--yellow)}
 .stock-select[data-val="כמעט נגמר"]{border-color:var(--orange);color:var(--orange)}
@@ -172,7 +173,7 @@ input:checked+.slider:before{transform:translateX(-20px)}
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyseDc329NWupfxK0xQ1sKh2dMdfITWykaKSi4BeDtyGZIfcnqhY4LU7BAm5Z-CDa1xSA/exec';
 const CLOUDINARY  = 'https://res.cloudinary.com/dpwibhqcl/image/upload/';
-const STOCK_OPTS  = ['יש בשפע','יש','כמעט נגמר','אין'];
+const STOCK_OPTS  = ['יש בשפע','יש','כמעט נגמר','אין','בקרוב'];
 
 let allProducts = [];
 let currentCat  = '_new';
