@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -69,6 +69,7 @@ header p{font-size:.75rem;opacity:.8;margin-top:1px}
 .card-sku{font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:2px}
 .card-cat{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge-new{display:inline-block;background:var(--purple);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:4px}
+.badge-promo{display:inline-block;background:var(--accent);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:4px}
 
 /* FIELDS */
 .card-fields{padding:10px 14px 14px;display:flex;flex-direction:column;gap:8px}
@@ -116,6 +117,15 @@ header p{font-size:.75rem;opacity:.8;margin-top:1px}
 .stock-select[data-val="כמעט נגמר"]{border-color:var(--orange);color:var(--orange)}
 .stock-select[data-val="אין"]{border-color:var(--red);color:var(--red)}
 
+/* VISIBILITY CHIPS (שיקוף באתר) */
+.vis-chips{display:flex;flex-wrap:wrap;gap:6px}
+.vis-chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:.82rem;font-weight:600;cursor:pointer;font-family:'Assistant',sans-serif;transition:all .15s;white-space:nowrap}
+.vis-chip:hover{border-color:var(--blue2)}
+.vis-chip.on{background:#eef2ff;border-color:var(--blue2);color:var(--blue2)}
+.vis-chip[data-val="__all__"].on{background:var(--blue2);border-color:var(--blue2);color:#fff}
+.vis-wrap.changed-block .vis-chips{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
+.vis-none{font-size:.72rem;color:var(--muted);margin-top:5px}
+
 /* TOGGLE */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
 .toggle-label{font-size:.82rem;font-weight:600;color:var(--text)}
@@ -125,6 +135,7 @@ header p{font-size:.75rem;opacity:.8;margin-top:1px}
 .slider:before{content:'';position:absolute;width:20px;height:20px;right:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 input:checked+.slider{background:var(--purple)}
 input:checked+.slider:before{transform:translateX(-20px)}
+input.promo:checked+.slider{background:var(--accent)}
 
 /* SAVE BTN */
 .btn-save{width:100%;padding:12px;background:#f1f5f9;color:var(--muted);border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Assistant',sans-serif;margin-top:4px}
@@ -184,6 +195,7 @@ input:checked+.slider:before{transform:translateX(-20px)}
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyseDc329NWupfxK0xQ1sKh2dMdfITWykaKSi4BeDtyGZIfcnqhY4LU7BAm5Z-CDa1xSA/exec';
 const CLOUDINARY  = 'https://res.cloudinary.com/dpwibhqcl/image/upload/';
 const STOCK_OPTS  = ['יש בשפע','יש','כמעט נגמר','אין','בקרוב'];
+const VIS_OPTS    = ['סיטונאי','חנויות','צרכן'];   // שיקוף באתר — בחירה מרובה
 
 let allProducts   = [];
 let currentCat    = '_new';
@@ -214,7 +226,12 @@ const FIELD_DEFS = {
   consumer: { norms: ['מחירצרכן','מחירלצרכן'],      fallback: 'מחיר צרכן',      label: 'מחיר צרכן' },
   stock:    { norms: ['מלאי'],                      fallback: 'מלאי',           label: 'מלאי' },
   box:      { norms: ['כמותבמארז','כמותבמאריז'],    fallback: 'כמות במארז',     label: 'כמות במארז' },
-  isNew:    { norms: ['אינדיקטורחדש','חדש'],        fallback: 'אינדיקטור חדש',  label: 'מוצר חדש' }
+  isNew:    { norms: ['אינדיקטורחדש','חדש'],        fallback: 'אינדיקטור חדש',  label: 'מוצר חדש' },
+  /* ── שדות חדשים ── */
+  visible:  { norms: ['שיקוףבאתר','שיקוף','הצגהבאתר'],
+              fallback: 'שיקוף באתר', label: 'שיקוף באתר', optional: true },
+  promo:    { norms: ['קידום','מוצרמקודם','בקידום'],
+              fallback: 'קידום',      label: 'קידום',      optional: true }
 };
 
 let K      = {};   // מפתח לוגי → שם העמודה האמיתי בגיליון
@@ -273,6 +290,12 @@ function showDebug(missing) {
   if (!KFound.supplier) {
     notes.push('ℹ️ עמודת <b>מחיר ספק</b> לא נמצאה בגיליון — השדה לא מוצג. הוסף עמודה בשם <code>מחיר ספק</code> כדי לראות אותו.');
   }
+  if (!KFound.visible) {
+    notes.push('ℹ️ עמודת <b>שיקוף באתר</b> לא נמצאה בגיליון — השדה לא מוצג. הוסף עמודה בשם <code>שיקוף באתר</code> (ערכים: כולם / סיטונאי, חנויות, צרכן).');
+  }
+  if (!KFound.promo) {
+    notes.push('ℹ️ עמודת <b>קידום</b> לא נמצאה בגיליון — השדה לא מוצג. הוסף עמודה בשם <code>קידום</code> (ערך: כן / ריק).');
+  }
   if (!notes.length) { bar.className = 'debugbar'; bar.innerHTML = ''; return; }
 
   bar.className = 'debugbar show';
@@ -283,51 +306,37 @@ function showDebug(missing) {
 
 /* ── LOAD ── */
 function loadData() {
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('cards').innerHTML = '';
-  document.getElementById('empty').style.display = 'none';
-  document.getElementById('status-dot').className = 'dot';
-  document.getElementById('status-text').textContent = 'מתחבר...';
-  document.getElementById('sync-status').textContent = 'טוען...';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('cards').innerHTML = '';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('status-dot').className = 'dot';
+    document.getElementById('status-text').textContent = 'מתחבר...';
+    document.getElementById('sync-status').textContent = 'טוען...';
 
-  const cb = 'cb' + Date.now();
-  const s  = document.createElement('script');
-  s.src    = SCRIPT_URL + '?action=read&callback=' + cb + '&_=' + Date.now();
-
-  const timer = setTimeout(function() {
-    if (window[cb]) {
-      delete window[cb];
-      try { document.head.removeChild(s); } catch(e){}
-      showErr('timeout — בדוק שה-Apps Script פרוס כ-Web App ציבורי');
-    }
-  }, 15000);
-
-  window[cb] = function(data) {
-    clearTimeout(timer);
-    try { document.head.removeChild(s); } catch(e){}
-    delete window[cb];
-    if (!data || !data.success) { showErr('שגיאה מהשרת: ' + JSON.stringify(data)); return; }
-    allProducts = data.data || [];
-
-    const missing = detectKeys();   // ← חייב לרוץ לפני כל שימוש בשדות
-    showDebug(missing);
-
-    buildFieldOptions();
-    buildCats();
-    filterCards();
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('status-dot').className = 'dot live';
-    document.getElementById('status-text').textContent = allProducts.length + ' מוצרים נטענו';
-    document.getElementById('sync-status').textContent = '✓ ' + allProducts.length + ' מוצרים';
-  };
-
-  s.onerror = function() {
-    clearTimeout(timer);
-    delete window[cb];
-    showErr('שגיאת טעינת script — Apps Script URL לא נגיש');
-  };
-  document.head.appendChild(s);
+    fetch(SCRIPT_URL + '?action=read&_=' + Date.now())
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if (!data || !data.success) {
+                showErr('שגיאה מהשרת: ' + JSON.stringify(data));
+                return;
+            }
+            allProducts = data.data || [];
+            const missing = detectKeys();
+            showDebug(missing);
+            buildFieldOptions();
+            buildCats();
+            filterCards();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('status-dot').className = 'dot live';
+            document.getElementById('status-text').textContent = allProducts.length + ' מוצרים נטענו';
+            document.getElementById('sync-status').textContent = '✓ ' + allProducts.length + ' מוצרים';
+        })
+        .catch(err => {
+            showErr('שגיאת רשת: ' + err.message);
+        });
 }
 
 function showErr(msg) {
@@ -363,9 +372,13 @@ function subcatsFor(cat) {
 function buildCats() {
   const cats = [...new Set(allProducts.map(p => String(p[K.cat] || '').trim()).filter(Boolean))];
   const bar  = document.getElementById('categories');
-  const newCount = allProducts.filter(p => isNewProduct(p)).length;
-  const allCount = allProducts.length;
+  const newCount   = allProducts.filter(p => isNewProduct(p)).length;
+  const promoCount = allProducts.filter(p => isPromoProduct(p)).length;
+  const allCount   = allProducts.length;
   let html = '<button class="cat-btn' + (currentCat==='_new'?' active':'') + '" onclick="setCat(&apos;_new&apos;,this)">✨ חדש (' + newCount + ')</button>';
+  if (KFound.promo) {
+    html += '<button class="cat-btn' + (currentCat==='_promo'?' active':'') + '" onclick="setCat(&apos;_promo&apos;,this)">⭐ בקידום (' + promoCount + ')</button>';
+  }
   html += '<button class="cat-btn' + (currentCat==='all'?' active':'') + '" onclick="setCat(&apos;all&apos;,this)">הכל (' + allCount + ')</button>';
   cats.forEach(function(c) {
     var n = allProducts.filter(function(p){ return String(p[K.cat] || '').trim() === c; }).length;
@@ -388,9 +401,13 @@ function filterCards() {
     const sku  = String(getSKU(p)).toLowerCase();
     const name = String(p[K.name] || '').toLowerCase();
     const cat  = String(p[K.cat]  || '').trim();
-    const isNew= isNewProduct(p);
 
-    const matchCat = currentCat === 'all' || (currentCat === '_new' ? isNew : cat === currentCat);
+    let matchCat;
+    if (currentCat === 'all')          matchCat = true;
+    else if (currentCat === '_new')    matchCat = isNewProduct(p);
+    else if (currentCat === '_promo')  matchCat = isPromoProduct(p);
+    else                               matchCat = cat === currentCat;
+
     return (!q || sku.includes(q) || name.includes(q)) && matchCat;
   });
 
@@ -489,6 +506,51 @@ function addSubcat(btn, sku) {
   // לא מסמנים dirty כאן — רק הקלדה בפועל של שם הופכת את הכרטיס לשמור
 }
 
+/* ══════════════════════════════════════════════════════
+   שיקוף באתר — בחירה מרובה (סיטונאי / חנויות / צרכן)
+   מאוחסן בגיליון כמחרוזת: "כולם" או "סיטונאי, חנויות"
+   ══════════════════════════════════════════════════════ */
+function parseVis(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return [];
+  if (/כולם|הכל/.test(s)) return [...VIS_OPTS];
+  const parts = s.split(/[,،;|\/]+/).map(x => x.trim()).filter(Boolean);
+  return VIS_OPTS.filter(o => parts.includes(o));
+}
+function visToStr(list) {
+  if (!list.length) return '';
+  if (list.length === VIS_OPTS.length) return 'כולם';
+  return VIS_OPTS.filter(o => list.includes(o)).join(', ');
+}
+function syncVisUI(wrap) {
+  const hidden = wrap.querySelector('input[data-role="vis-value"]');
+  const cur    = parseVis(hidden.value);
+  wrap.querySelectorAll('.vis-chip').forEach(c => {
+    const v  = c.getAttribute('data-val');
+    const on = v === '__all__' ? cur.length === VIS_OPTS.length : cur.includes(v);
+    c.classList.toggle('on', on);
+    c.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  const none = wrap.querySelector('[data-role="vis-none"]');
+  if (none) none.style.display = cur.length ? 'none' : '';
+}
+function toggleVis(btn, sku, val) {
+  const wrap   = btn.closest('.vis-wrap');
+  const hidden = wrap.querySelector('input[data-role="vis-value"]');
+  let cur = parseVis(hidden.value);
+
+  if (val === '__all__') {
+    cur = cur.length === VIS_OPTS.length ? [] : [...VIS_OPTS];
+  } else {
+    cur = cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val];
+  }
+
+  hidden.value = visToStr(cur);
+  syncVisUI(wrap);
+  wrap.classList.add('changed-block');
+  markDirty(hidden, sku);
+}
+
 /* ── RENDER ── */
 function renderCards(products) {
   const grid = document.getElementById('cards');
@@ -513,6 +575,9 @@ function renderCards(products) {
     const stock    = p[K.stock]    || '';
     const boxQty   = p[K.box]      || '';
     const isNew    = isNewProduct(p);
+    const isPromo  = isPromoProduct(p);
+    const visList  = parseVis(p[K.visible]);
+    const visStr   = visToStr(visList);
 
     const subList  = subcatsFor(cat);
     const showSub  = subList.length > 0 || !!String(subcat).trim();
@@ -527,6 +592,14 @@ function renderCards(products) {
 
     const showSupplier = KFound.supplier;
 
+    const visChips = ['__all__', ...VIS_OPTS].map(v => {
+      const label = v === '__all__' ? 'כולם' : v;
+      const on    = v === '__all__' ? visList.length === VIS_OPTS.length : visList.includes(v);
+      return '<button type="button" class="vis-chip' + (on ? ' on' : '') + '" data-val="' + escH(v) + '"' +
+             ' aria-pressed="' + (on ? 'true' : 'false') + '"' +
+             ' onclick="toggleVis(this,\'' + escH(sku) + '\',\'' + escH(v) + '\')">' + escH(label) + '</button>';
+    }).join('');
+
     const div = document.createElement('div');
     div.className = 'card';
     div.setAttribute('data-sku', sku);
@@ -536,7 +609,7 @@ function renderCards(products) {
         <img class="card-img" src="${imgSrc}" alt="${escH(sku)}"
           onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'120\\' height=\\'120\\'><rect width=\\'100%25\\' height=\\'100%25\\' fill=\\'%23f1f5f9\\'/><text x=\\'50%25\\' y=\\'50%25\\' font-size=\\'10\\' fill=\\'%2394a3b8\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>${escH(sku)}</text></svg>'">
         <div class="card-meta">
-          <div class="card-sku">${escH(sku)} ${isNew ? '<span class="badge-new">✨ חדש</span>' : ''}</div>
+          <div class="card-sku">${escH(sku)} ${isNew ? '<span class="badge-new">✨ חדש</span>' : ''} ${isPromo ? '<span class="badge-promo" data-role="promo-badge">⭐ בקידום</span>' : ''}</div>
           <div class="card-cat" data-role="crumb">${escH(String(cat))}${subcat ? ' / ' + escH(String(subcat)) : ''}</div>
         </div>
       </div>
@@ -640,6 +713,14 @@ function renderCards(products) {
           </select>
         </div>
 
+        ${KFound.visible ? `
+        <div class="vis-wrap" data-role="vis-wrap">
+          <div class="field-label">🌐 שיקוף באתר<span class="ro-tag">בחירה מרובה</span></div>
+          <div class="vis-chips">${visChips}</div>
+          <div class="vis-none" data-role="vis-none"${visList.length ? ' style="display:none"' : ''}>לא מוצג לאף קהל</div>
+          <input type="hidden" data-role="vis-value" data-field="${escH(K.visible)}" value="${escH(visStr)}">
+        </div>` : ''}
+
         <div class="toggle-row">
           <span class="toggle-label">מוצר חדש</span>
           <label class="toggle">
@@ -649,6 +730,17 @@ function renderCards(products) {
             <span class="slider"></span>
           </label>
         </div>
+
+        ${KFound.promo ? `
+        <div class="toggle-row">
+          <span class="toggle-label">⭐ קידום</span>
+          <label class="toggle">
+            <input type="checkbox" class="promo" data-field="${escH(K.promo)}"
+              ${isPromo ? 'checked' : ''}
+              onchange="markDirty(this,'${escH(sku)}')">
+            <span class="slider"></span>
+          </label>
+        </div>` : ''}
 
         <button class="btn-save" data-save-for="${escH(sku)}" onclick="saveCard('${escH(sku)}')">שמור</button>
       </div>
@@ -793,6 +885,22 @@ async function saveCard(sku) {
       if (sSel) sSel.value = updates[K.subcat];
     }
 
+    // תג "בקידום" בראש הכרטיס
+    if (KFound.promo && Object.prototype.hasOwnProperty.call(updates, K.promo)) {
+      const skuLine = card.querySelector('.card-sku');
+      const badge   = card.querySelector('[data-role="promo-badge"]');
+      const on      = updates[K.promo] === 'כן';
+      if (on && !badge && skuLine) {
+        skuLine.insertAdjacentHTML('beforeend', ' <span class="badge-promo" data-role="promo-badge">⭐ בקידום</span>');
+      } else if (!on && badge) {
+        badge.remove();
+      }
+    }
+
+    // שיקוף באתר — ניקוי סימון השינוי
+    const visWrap = card.querySelector('[data-role="vis-wrap"]');
+    if (visWrap) visWrap.classList.remove('changed-block');
+
     // פירורי לחם
     const crumb = card.querySelector('[data-role="crumb"]');
     if (crumb && prod) {
@@ -822,10 +930,12 @@ async function saveCard(sku) {
 function getSKU(p) {
   return p[K.sku] || p['מק"ט (קטלוגי)'] || p['מק""ט (קטלוגי)'] || p['מק"ט'] || '';
 }
-function isNewProduct(p) {
-  const v = String(p[K.isNew] || '').toLowerCase().trim();
-  return v === 'true' || v === '1' || v === 'כן' || v === 'v' || v === '✓';
+function truthy(v) {
+  const s = String(v || '').toLowerCase().trim();
+  return s === 'true' || s === '1' || s === 'כן' || s === 'v' || s === '✓';
 }
+function isNewProduct(p)   { return truthy(p[K.isNew]); }
+function isPromoProduct(p) { return truthy(p[K.promo]); }
 function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
