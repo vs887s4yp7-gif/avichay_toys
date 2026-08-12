@@ -306,51 +306,37 @@ function showDebug(missing) {
 
 /* ── LOAD ── */
 function loadData() {
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('cards').innerHTML = '';
-  document.getElementById('empty').style.display = 'none';
-  document.getElementById('status-dot').className = 'dot';
-  document.getElementById('status-text').textContent = 'מתחבר...';
-  document.getElementById('sync-status').textContent = 'טוען...';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('cards').innerHTML = '';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('status-dot').className = 'dot';
+    document.getElementById('status-text').textContent = 'מתחבר...';
+    document.getElementById('sync-status').textContent = 'טוען...';
 
-  const cb = 'cb' + Date.now();
-  const s  = document.createElement('script');
-  s.src    = SCRIPT_URL + '?action=read&callback=' + cb + '&_=' + Date.now();
-
-  const timer = setTimeout(function() {
-    if (window[cb]) {
-      delete window[cb];
-      try { document.head.removeChild(s); } catch(e){}
-      showErr('timeout — בדוק שה-Apps Script פרוס כ-Web App ציבורי');
-    }
-  }, 15000);
-
-  window[cb] = function(data) {
-    clearTimeout(timer);
-    try { document.head.removeChild(s); } catch(e){}
-    delete window[cb];
-    if (!data || !data.success) { showErr('שגיאה מהשרת: ' + JSON.stringify(data)); return; }
-    allProducts = data.data || [];
-
-    const missing = detectKeys();   // ← חייב לרוץ לפני כל שימוש בשדות
-    showDebug(missing);
-
-    buildFieldOptions();
-    buildCats();
-    filterCards();
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('status-dot').className = 'dot live';
-    document.getElementById('status-text').textContent = allProducts.length + ' מוצרים נטענו';
-    document.getElementById('sync-status').textContent = '✓ ' + allProducts.length + ' מוצרים';
-  };
-
-  s.onerror = function() {
-    clearTimeout(timer);
-    delete window[cb];
-    showErr('שגיאת טעינת script — Apps Script URL לא נגיש');
-  };
-  document.head.appendChild(s);
+    fetch(SCRIPT_URL + '?action=read&_=' + Date.now())
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if (!data || !data.success) {
+                showErr('שגיאה מהשרת: ' + JSON.stringify(data));
+                return;
+            }
+            allProducts = data.data || [];
+            const missing = detectKeys();
+            showDebug(missing);
+            buildFieldOptions();
+            buildCats();
+            filterCards();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('status-dot').className = 'dot live';
+            document.getElementById('status-text').textContent = allProducts.length + ' מוצרים נטענו';
+            document.getElementById('sync-status').textContent = '✓ ' + allProducts.length + ' מוצרים';
+        })
+        .catch(err => {
+            showErr('שגיאת רשת: ' + err.message);
+        });
 }
 
 function showErr(msg) {
